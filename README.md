@@ -1,7 +1,7 @@
 # BetterDock
 
 <p align="center">
-  <img src="preview.png" alt="BetterDock Preview" width="700"/>
+  <img src="preview.png" alt="BetterDock Preview" width="100%"/>
 </p>
 
 An enhanced, theme-matching application dock for [Omarchy](https://omarchy.org) floating workspaces.
