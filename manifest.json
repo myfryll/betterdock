@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "myfryll.betterdock",
+  "name": "BetterDock",
+  "version": "1.0.0",
+  "author": "myfryll",
+  "description": "Clean app dock for Omarchy floating workspaces with theme styling, smart auto-hide, and live positioning.",
+  "kinds": [
+    "service"
+  ],
+  "entryPoints": {
+    "service": "Dock.qml"
+  }
+}
