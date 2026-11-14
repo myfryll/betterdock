@@ -95,6 +95,93 @@ Item {
     onLoadFailed: function() {}
   }
 
+  // BetterDock Customization Preferences
+  property real dockOpacity: 0.72
+  property int dockIconSize: Math.round(36 * Style.fontScale)
+  property int dockCornerRadius: 12
+  property string dockAlignment: "center"
+  property string dockLanguage: "ru"
+  property bool hoverAnimation: true
+  property real hoverZoomScale: 1.15
+  property bool hideOnMaximized: true
+  property bool fullWidth: false
+  property bool floatingPanel: false
+  property bool allWorkspaces: false
+  property bool settingsOpened: false
+
+  function loadBetterDockSettings(content) {
+    try {
+      var d = JSON.parse(content)
+      if (d) {
+        if (typeof d.opacity === "number") root.dockOpacity = Math.max(0.1, Math.min(1.0, d.opacity))
+        if (typeof d.iconSize === "number") root.dockIconSize = Math.max(24, Math.min(56, d.iconSize))
+        if (typeof d.cornerRadius === "number") root.dockCornerRadius = Math.max(0, Math.min(32, Math.round(d.cornerRadius)))
+        if (typeof d.alignment === "string" && (d.alignment === "left" || d.alignment === "center")) root.dockAlignment = d.alignment
+        if (typeof d.language === "string" && (d.language === "ru" || d.language === "en")) root.dockLanguage = d.language
+        if (typeof d.hoverAnimation === "boolean") root.hoverAnimation = d.hoverAnimation
+        if (typeof d.hoverZoomScale === "number") root.hoverZoomScale = Math.max(1.05, Math.min(1.5, d.hoverZoomScale))
+        if (typeof d.hideOnMaximized === "boolean") root.hideOnMaximized = d.hideOnMaximized
+        if (typeof d.fullWidth === "boolean") root.fullWidth = d.fullWidth
+        if (typeof d.floatingPanel === "boolean") root.floatingPanel = d.floatingPanel
+        if (typeof d.allWorkspaces === "boolean") root.allWorkspaces = d.allWorkspaces
+        if (d.openSettings === true) {
+          root.openSettings()
+        }
+      }
+    } catch (e) {}
+  }
+
+  function saveSettings() {
+    var data = {
+      opacity: Math.round(root.dockOpacity * 100) / 100,
+      iconSize: root.dockIconSize,
+      cornerRadius: root.dockCornerRadius,
+      alignment: root.dockAlignment,
+      language: root.dockLanguage,
+      hoverAnimation: root.hoverAnimation,
+      hoverZoomScale: Math.round(root.hoverZoomScale * 100) / 100,
+      hideOnMaximized: root.hideOnMaximized,
+      fullWidth: root.fullWidth,
+      floatingPanel: root.floatingPanel,
+      allWorkspaces: root.allWorkspaces
+    }
+    var jsonStr = JSON.stringify(data, null, 2)
+    Quickshell.execDetached(["bash", "-c", "printf '%s\\n' " + Util.shellQuote(jsonStr) + " > ~/.config/omarchy/betterdock.json"])
+  }
+
+  function resetSettings() {
+    root.dockOpacity = 0.72
+    root.dockIconSize = Math.round(36 * Style.fontScale)
+    root.dockCornerRadius = 12
+    root.dockAlignment = "center"
+    root.dockLanguage = "ru"
+    root.hoverAnimation = true
+    root.hoverZoomScale = 1.15
+    root.hideOnMaximized = true
+    root.fullWidth = false
+    root.floatingPanel = false
+    root.allWorkspaces = false
+    root.saveSettings()
+  }
+
+  function openSettings() {
+    root.settingsOpened = true
+  }
+
+  function closeSettings() {
+    root.settingsOpened = false
+  }
+
+  FileView {
+    id: betterDockConfigFile
+    path: Quickshell.env("HOME") + "/.config/omarchy/betterdock.json"
+    watchChanges: true
+    printErrors: false
+    onLoaded: root.loadBetterDockSettings(text())
+    onFileChanged: reload()
+    onLoadFailed: function() {}
+  }
+
   readonly property var dockConfig: {
     if (root.userConfigDock && (root.userConfigDock.position !== undefined || root.userConfigDock.autohide !== undefined))
       return root.userConfigDock
@@ -508,6 +595,7 @@ Item {
 
     function refresh(): void { root.refresh() }
     function apps(): void { appGrid.toggle() }
+    function settings(): void { root.openSettings() }
   }
 
   ShellIpc {
@@ -571,6 +659,11 @@ Item {
   AppGrid {
     id: appGrid
     appLibrary: root.appLibrary
+    dock: root
+  }
+
+  DockSettings {
+    id: settingsDialog
     dock: root
   }
 }

@@ -37,18 +37,22 @@ PanelWindow {
     }
     return mode
   }
-  readonly property bool shown: !!dock && dock.isFloating(workspaceId) && fullscreenMode < 2
+  readonly property bool hideOnMaximized: !dock || dock.hideOnMaximized !== false
+  readonly property bool isFullWidth: !!dock && dock.fullWidth
+  readonly property bool isFloatingPanel: !!dock && dock.floatingPanel
+  readonly property bool settingsActive: !!dock && dock.settingsOpened
+  readonly property bool shown: !!dock && (dock.allWorkspaces || dock.fullWidth || dock.isFloating(workspaceId) || settingsActive) && fullscreenMode < 2
   // With auto-hide on, the dock waits off screen until the pointer reaches its
   // edge, and stays while the pointer, a menu, or a drag still needs it. A
   // maximized window hides the dock the same way, so it can still be called up.
-  readonly property bool autohide: !!dock && (dock.autohide || fullscreenMode === 1)
+  readonly property bool autohide: !!dock && (dock.autohide || (hideOnMaximized && fullscreenMode === 1))
   property bool revealed: false
-  readonly property bool menuOpen: menuItem !== null || settingsMenu
+  readonly property bool menuOpen: menuItem !== null || settingsMenu || settingsActive
   readonly property bool tucked: autohide && !(revealed || menuOpen || dragging || insertIndex >= 0)
   readonly property bool contentShown: shown && !tucked
 
   readonly property int gap: Style.spacing.xs
-  readonly property int iconSize: Math.round(36 * Style.fontScale)
+  readonly property int iconSize: dock ? dock.dockIconSize : Math.round(36 * Style.fontScale)
   // Each app has a square slot with its icon in the middle, and the slots run
   // straight to the edge of the dock.
   readonly property int iconInset: Style.spacing.md
@@ -56,8 +60,8 @@ PanelWindow {
   // A pinned app that is not running is drawn faded.
   readonly property real idleOpacity: 0.7
   // Room inward of the dock for its menus: the tallest, the apps button's,
-  // has five rows and divider.
-  readonly property int popupRoom: Math.max(220, Style.spacing.popupRowHeight * 6 + Style.space(24))
+  // has settings, position rows, and dividers.
+  readonly property int popupRoom: Math.max(260, Style.spacing.popupRowHeight * 7 + Style.space(32))
   // Icons pop away from the screen edge.
   readonly property int popOrigin: position === "top" ? Item.Top
     : position === "left" ? Item.Left
@@ -80,6 +84,8 @@ PanelWindow {
   property point dropPoint
   // Where an app dragged in from the app grid would land, or -1.
   property int insertIndex: -1
+
+  readonly property int reservedTop: (monitor && monitor.lastIpcObject && monitor.lastIpcObject.reserved) ? (monitor.lastIpcObject.reserved[1] || 0) : 0
 
   // Where this window sits on its screen, which a point from the app grid's
   // fullscreen surface is given in: against its edge, clear of the space
@@ -122,8 +128,7 @@ PanelWindow {
 
   // The slot a point along the dock falls before, counting from the first app.
   function slotIndexAt(point) {
-    var pad = window.vertical ? body.dockPaddingY : body.dockPaddingX
-    var along = (window.vertical ? point.y : point.x) - pad
+    var along = (window.vertical ? point.y - slots.y : point.x - slots.x)
     var first = window.slotSize
     var count = window.dock ? window.dock.itemModel.count : 0
     return Math.max(0, Math.min(count, Math.round((along - first) / window.slotSize)))
@@ -198,7 +203,9 @@ PanelWindow {
   // Kept clear of the bar's reserved edge, without reserving one of its own:
   // floating windows go where they are put.
   exclusionMode: ExclusionMode.Normal
-  exclusiveZone: 0
+  exclusiveZone: (dock && dock.fullWidth && !dock.autohide)
+    ? ((window.vertical ? body.width : body.height) + (window.isFloatingPanel ? body.panelMargin : 0))
+    : 0
 
   anchors {
     top: window.position !== "bottom"
@@ -215,6 +222,7 @@ PanelWindow {
 
     Region { item: window.shown && window.autohide ? edgeTrigger : null }
     Region { item: menu.visible ? menu : null }
+    Region { item: appsTooltip.visible ? appsTooltip : null }
   }
 
   onAutohideChanged: window.revealed = false
@@ -270,10 +278,21 @@ PanelWindow {
     readonly property int dockPaddingX: window.vertical ? Style.space(6) : Style.space(10)
     readonly property int dockPaddingY: window.vertical ? Style.space(10) : Style.space(6)
 
-    width: slots.implicitWidth + dockPaddingX * 2
-    height: slots.implicitHeight + dockPaddingY * 2
+    readonly property int naturalWidth: slots.implicitWidth + dockPaddingX * 2
+    readonly property int naturalHeight: slots.implicitHeight + dockPaddingY * 2
+
+    readonly property int panelMargin: (window.isFullWidth && window.isFloatingPanel) ? Style.space(8) : 0
+
+    width: window.isFullWidth
+      ? (window.vertical ? naturalWidth : (window.width - panelMargin * 2))
+      : naturalWidth
+
+    height: window.isFullWidth
+      ? (window.vertical ? (window.height - panelMargin * 2) : naturalHeight)
+      : naturalHeight
+
     // How far the dock is tucked past its edge. Fully tucks off-screen past its depth and shadow
-    property real tuck: window.tucked ? (window.vertical ? width : height) + window.gap + Style.space(16) : 0
+    property real tuck: window.tucked ? (window.vertical ? width : height) + (window.isFullWidth ? panelMargin : window.gap) + Style.space(16) : 0
 
     // Tucking away is quicker than coming back.
     Behavior on tuck {
@@ -285,17 +304,39 @@ PanelWindow {
       }
     }
 
-    x: window.position === "left" ? window.gap - tuck
-      : window.position === "right" ? window.width - width - window.gap + tuck
-      : Math.round((window.width - width) / 2)
-    y: window.position === "top" ? window.gap - tuck
-      : window.position === "bottom" ? window.height - height - window.gap + tuck
-      : Math.round((window.height - height) / 2)
+    x: window.isFullWidth
+      ? (window.position === "left" ? panelMargin - tuck
+        : window.position === "right" ? window.width - width - panelMargin + tuck
+        : panelMargin)
+      : (window.position === "left" ? window.gap - tuck
+        : window.position === "right" ? window.width - width - window.gap + tuck
+        : Math.round((window.width - width) / 2))
+
+    y: window.isFullWidth
+      ? (window.position === "top" ? panelMargin - tuck
+        : window.position === "bottom" ? window.height - height - panelMargin + tuck
+        : panelMargin)
+      : (window.position === "top" ? window.gap - tuck
+        : window.position === "bottom" ? window.height - height - window.gap + tuck
+        : Math.round((window.height - height) / 2))
+
     // Switching between tiled and floating workspaces shows and hides the dock
     // at once, with nothing to watch in between. Hidden by opacity rather than
     // visibility, so the icons keep their textures and are drawn on the first
     // frame back instead of being uploaded again.
     opacity: window.shown ? 1 : 0
+
+    // Right-clicking empty panel area opens settings menu
+    MouseArea {
+      anchors.fill: parent
+      z: -1
+      acceptedButtons: Qt.RightButton
+      onClicked: function(mouse) {
+        if (mouse.button === Qt.RightButton) {
+          window.openSettingsMenu(slots)
+        }
+      }
+    }
 
     HoverHandler {
       id: bodyHover
@@ -308,50 +349,93 @@ PanelWindow {
       }
     }
 
-    // Dark Glass Background (in harmony with clock.exe / music.exe desktop widgets & Omarchy theme)
+    // Glass Background (in harmony with desktop widgets & Omarchy themes)
     Item {
       id: glassCapsule
       anchors.fill: parent
       z: -1
 
-      readonly property real dockRadius: Style.cornerRadius > 0 ? Style.cornerRadius : 8
-      readonly property color themeBg: Commons.Color.background
+      readonly property real currentOpacity: window.dock ? window.dock.dockOpacity : 0.72
+      readonly property int customRadius: window.dock ? window.dock.dockCornerRadius : 12
+      readonly property real dockRadius: (window.isFullWidth && !window.isFloatingPanel) ? 0 : customRadius
+      readonly property color themeBg: Commons.Color.bar.background
       readonly property color themeAccent: Commons.Color.accent
+      readonly property bool isDarkTheme: (themeBg.r * 0.299 + themeBg.g * 0.587 + themeBg.b * 0.114) < 0.5
 
-      // 1. Soft elevation drop shadow (matches clock.exe shadow)
+      // 1. Soft elevation drop shadow (active when floating: standard dock or floating panel)
       Rectangle {
+        visible: !window.isFullWidth || window.isFloatingPanel
         anchors.fill: parent
         anchors.topMargin: window.position === "top" ? -Style.space(2) : Style.space(3)
         anchors.bottomMargin: window.position === "bottom" ? -Style.space(2) : 0
         anchors.leftMargin: window.position === "left" ? -Style.space(2) : Style.space(1)
         anchors.rightMargin: window.position === "right" ? -Style.space(2) : Style.space(1)
         radius: glassCapsule.dockRadius
-        color: Qt.rgba(0, 0, 0, 0.35)
+        color: Qt.rgba(0, 0, 0, 0.40 * glassCapsule.currentOpacity)
       }
 
-      // 2. Main Dark Glass body (translucent theme background with accent border)
+      // 2. Main Glass body (translucent theme background with dynamic opacity)
       Rectangle {
         id: glassBase
         anchors.fill: parent
         radius: glassCapsule.dockRadius
-        color: Qt.rgba(glassCapsule.themeBg.r, glassCapsule.themeBg.g, glassCapsule.themeBg.b, 0.72)
+        color: Qt.rgba(glassCapsule.themeBg.r, glassCapsule.themeBg.g, glassCapsule.themeBg.b, glassCapsule.currentOpacity)
 
-        // Subtle accent-tinted border (matches clock.exe & music.exe)
-        border.width: 1
-        border.color: Qt.rgba(glassCapsule.themeAccent.r, glassCapsule.themeAccent.g, glassCapsule.themeAccent.b, 0.35)
+        // Subtle accent-tinted border for floating dock or floating panel
+        border.width: (window.isFullWidth && !window.isFloatingPanel) ? 0 : 1
+        border.color: Qt.rgba(glassCapsule.themeAccent.r, glassCapsule.themeAccent.g, glassCapsule.themeAccent.b, Math.max(0.20, Math.min(0.60, 0.15 + glassCapsule.currentOpacity * 0.40)))
 
-        // 3. Delicate accent sheen and depth gradient
+        // FullWidth non-floating panel inner divider line: crisp 1px line facing the workspace/windows
         Rectangle {
+          visible: window.isFullWidth && !window.isFloatingPanel && window.vertical
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          anchors.right: window.position === "left" ? parent.right : undefined
+          anchors.left: window.position === "right" ? parent.left : undefined
+          width: 1
+          color: Qt.rgba(glassCapsule.themeAccent.r, glassCapsule.themeAccent.g, glassCapsule.themeAccent.b, 0.25)
+        }
+        Rectangle {
+          visible: window.isFullWidth && !window.isFloatingPanel && !window.vertical
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: window.position === "bottom" ? parent.top : undefined
+          anchors.bottom: window.position === "top" ? parent.bottom : undefined
+          height: 1
+          color: Qt.rgba(glassCapsule.themeAccent.r, glassCapsule.themeAccent.g, glassCapsule.themeAccent.b, 0.25)
+        }
+
+        // 3. Delicate accent sheen and depth gradient (floating dock capsule or floating panel)
+        Rectangle {
+          visible: !window.isFullWidth || window.isFloatingPanel
           anchors.fill: parent
           anchors.margins: 1
           radius: Math.max(0, glassCapsule.dockRadius - 1)
           color: "transparent"
           gradient: Gradient {
             orientation: window.vertical ? Gradient.Horizontal : Gradient.Vertical
-            GradientStop { position: 0.00; color: Qt.rgba(glassCapsule.themeAccent.r, glassCapsule.themeAccent.g, glassCapsule.themeAccent.b, 0.16) }
-            GradientStop { position: 0.20; color: Qt.rgba(glassCapsule.themeAccent.r, glassCapsule.themeAccent.g, glassCapsule.themeAccent.b, 0.04) }
-            GradientStop { position: 0.50; color: Qt.rgba(0.0, 0.0, 0.0, 0.00) }
-            GradientStop { position: 1.00; color: Qt.rgba(0.0, 0.0, 0.0, 0.16) }
+            GradientStop {
+              position: 0.00
+              color: glassCapsule.isDarkTheme
+                ? Qt.rgba(glassCapsule.themeAccent.r, glassCapsule.themeAccent.g, glassCapsule.themeAccent.b, 0.20 * glassCapsule.currentOpacity)
+                : Qt.rgba(1.0, 1.0, 1.0, 0.45 * glassCapsule.currentOpacity)
+            }
+            GradientStop {
+              position: 0.25
+              color: glassCapsule.isDarkTheme
+                ? Qt.rgba(glassCapsule.themeAccent.r, glassCapsule.themeAccent.g, glassCapsule.themeAccent.b, 0.05 * glassCapsule.currentOpacity)
+                : Qt.rgba(1.0, 1.0, 1.0, 0.10 * glassCapsule.currentOpacity)
+            }
+            GradientStop {
+              position: 0.50
+              color: Qt.rgba(0.0, 0.0, 0.0, 0.00)
+            }
+            GradientStop {
+              position: 1.00
+              color: glassCapsule.isDarkTheme
+                ? Qt.rgba(0.0, 0.0, 0.0, 0.22 * glassCapsule.currentOpacity)
+                : Qt.rgba(glassCapsule.themeBg.r * 0.7, glassCapsule.themeBg.g * 0.7, glassCapsule.themeBg.b * 0.7, 0.18 * glassCapsule.currentOpacity)
+            }
           }
         }
       }
@@ -359,10 +443,21 @@ PanelWindow {
 
     Grid {
       id: slots
-      anchors.centerIn: parent
+      x: (!window.vertical && window.dock && window.dock.dockAlignment === "left")
+        ? (window.isFullWidth ? Style.space(16) : body.dockPaddingX)
+        : Math.round((parent.width - width) / 2)
+
+      y: window.vertical
+        ? ((window.dock && window.dock.dockAlignment === "left")
+            ? (window.isFullWidth ? Style.space(8) : body.dockPaddingY)
+            : Math.round((parent.height - height) / 2))
+        : Math.round((parent.height - height) / 2)
+
       columns: window.vertical ? 1 : appRepeater.count + 1
 
-      AppsSlot {}
+      AppsSlot {
+        id: appsSlotInstance
+      }
 
       Repeater {
         id: appRepeater
@@ -426,7 +521,7 @@ PanelWindow {
       y: window.iconInset
       width: window.iconSize
       height: window.iconSize
-      scale: appsSlot.hovered ? 1.15 : 1
+      scale: (window.dock && !window.dock.hoverAnimation) ? 1 : (appsSlot.hovered ? (window.dock ? window.dock.hoverZoomScale : 1.15) : 1)
       transformOrigin: window.popOrigin
 
       Behavior on scale { NumberAnimation { duration: Style.duration(120); easing.type: Easing.OutCubic } }
@@ -561,7 +656,7 @@ PanelWindow {
         x: window.vertical ? 0 : appSlot.displayedShift
         y: window.vertical ? appSlot.displayedShift : 0
       }
-      scale: appSlot.lifted || appSlot.hovered ? 1.15 : 1
+      scale: (window.dock && !window.dock.hoverAnimation) ? 1 : (appSlot.lifted || appSlot.hovered ? (window.dock ? window.dock.hoverZoomScale : 1.15) : 1)
       transformOrigin: window.popOrigin
 
       Behavior on scale { NumberAnimation { duration: Style.duration(120); easing.type: Easing.OutCubic } }
@@ -691,6 +786,27 @@ PanelWindow {
         }
       }
 
+      // Divider before Settings
+      Rectangle {
+        visible: window.settingsMenu
+        width: menuColumn.width
+        height: 1
+        color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.18)
+      }
+
+      // Settings Dialog Row
+      MenuRow {
+        visible: window.settingsMenu
+        symbol: "⚙"
+        text: (window.dock && window.dock.dockLanguage === "ru") ? "Настройки дока..." : "Dock Settings..."
+        onTriggered: {
+          window.settingsMenu = false
+          if (window.dock && typeof window.dock.openSettings === "function") {
+            window.dock.openSettings()
+          }
+        }
+      }
+
       // App Context Menu: New Window
       MenuRow {
         visible: menu.hasEntry && menu.running
@@ -795,6 +911,124 @@ PanelWindow {
       onClicked: {
         row.triggered()
         window.closeMenu()
+      }
+    }
+  }
+
+  property bool appsTooltipActive: false
+
+  Timer {
+    id: appsTooltipTimer
+    interval: 350
+    repeat: false
+    onTriggered: {
+      if (appsSlotInstance && appsSlotInstance.hovered && !window.menuOpen && !window.dragging && !window.settingsActive) {
+        window.appsTooltipActive = true
+      }
+    }
+  }
+
+  Connections {
+    target: appsSlotInstance
+    function onHoveredChanged() {
+      if (appsSlotInstance && appsSlotInstance.hovered && !window.menuOpen && !window.dragging && !window.settingsActive) {
+        appsTooltipTimer.restart()
+      } else {
+        appsTooltipTimer.stop()
+        window.appsTooltipActive = false
+      }
+    }
+  }
+
+  onMenuOpenChanged: {
+    if (menuOpen) {
+      appsTooltipTimer.stop()
+      appsTooltipActive = false
+    }
+  }
+
+  onDraggingChanged: {
+    if (dragging) {
+      appsTooltipTimer.stop()
+      appsTooltipActive = false
+    }
+  }
+
+  function tooltipX(slot, popup) {
+    if (!slot) return 0
+    if (window.position === "left") return body.x + body.width + window.gap
+    if (window.position === "right") return body.x - window.gap - popup.width
+    var center = slot.mapToItem(window.contentItem, slot.width / 2, 0).x
+    return Math.max(body.x, Math.min(body.x + body.width - popup.width, center - popup.width / 2))
+  }
+
+  function tooltipY(slot, popup) {
+    if (!slot) return 0
+    if (window.position === "top") return body.y + body.height + window.gap
+    if (window.position === "bottom") return body.y - window.gap - popup.height
+    var center = slot.mapToItem(window.contentItem, 0, slot.height / 2).y
+    return Math.max(body.y, Math.min(body.y + body.height - popup.height, center - popup.height / 2))
+  }
+
+  Item {
+    id: appsTooltip
+    visible: opacity > 0
+    opacity: window.appsTooltipActive ? 1 : 0
+    Behavior on opacity { NumberAnimation { duration: Style.duration(150) } }
+
+    readonly property int tipPaddingX: Style.space(10)
+    readonly property int tipPaddingY: Style.space(5)
+    readonly property int tipRadius: Style.cornerRadius > 0 ? Math.min(Style.cornerRadius, 8) : 6
+
+    width: tooltipRow.implicitWidth + tipPaddingX * 2
+    height: tooltipRow.implicitHeight + tipPaddingY * 2
+
+    x: window.tooltipX(appsSlotInstance, appsTooltip)
+    y: window.tooltipY(appsSlotInstance, appsTooltip)
+
+    // Elevation Drop Shadow
+    Rectangle {
+      anchors.fill: parent
+      anchors.margins: -1
+      radius: appsTooltip.tipRadius + 1
+      color: Qt.rgba(0, 0, 0, 0.45)
+      z: -1
+    }
+
+    // Tooltip Pill Background
+    Rectangle {
+      anchors.fill: parent
+      radius: appsTooltip.tipRadius
+      color: Qt.rgba(Commons.Color.menu.background.r, Commons.Color.menu.background.g, Commons.Color.menu.background.b, 0.95)
+      border.width: 1
+      border.color: Commons.Color.menu.border
+
+      Row {
+        id: tooltipRow
+        anchors.centerIn: parent
+        spacing: Style.space(6)
+
+        Text {
+          text: (window.dock && window.dock.dockLanguage === "ru") ? "Приложения" : "Applications"
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
+          font.bold: true
+          color: Commons.Color.foreground
+        }
+
+        Text {
+          text: "•"
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
+          color: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.45)
+        }
+
+        Text {
+          text: (window.dock && window.dock.dockLanguage === "ru") ? "ПКМ: Настройки" : "Right-click: Settings"
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
+          color: Commons.Color.accent
+        }
       }
     }
   }
