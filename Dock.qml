@@ -100,7 +100,7 @@ Item {
   property int dockIconSize: Math.round(36 * Style.fontScale)
   property int dockCornerRadius: 12
   property string dockAlignment: "center"
-  property string dockLanguage: "ru"
+  property string dockLanguage: "en"
   property bool hoverAnimation: true
   property real hoverZoomScale: 1.15
   property bool hideOnMaximized: true
@@ -154,7 +154,7 @@ Item {
     root.dockIconSize = Math.round(36 * Style.fontScale)
     root.dockCornerRadius = 12
     root.dockAlignment = "center"
-    root.dockLanguage = "ru"
+    root.dockLanguage = "en"
     root.hoverAnimation = true
     root.hoverZoomScale = 1.15
     root.hideOnMaximized = true

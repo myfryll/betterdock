@@ -13,6 +13,9 @@ Unlike the default fully transparent dock, **BetterDock** features a refined, se
 ## Features
 
 - **Theme-Integrated Style**: A subtle, semi-translucent dark capsule with an accent-colored border and gentle drop shadow that matches your active Omarchy theme.
+- **Dedicated Settings Window**: Configure opacity, corner radius, icon scale, full-width mode, floating island panel, icon alignment, hover magnification, and language (English/Russian) right from a native GUI.
+- **Smart Discoverability Tooltip**: Hovering over the 9-dots button reveals a subtle tooltip showing the shortcut to settings.
+- **System Search Integration**: Easily discover and open settings from Omarchy's application search (`BetterDock Settings`) or via terminal (`omarchy-dock-settings`).
 - **Smart Auto-Hide**: Automatically tucks completely off-screen under maximized or fullscreen applications. Effortlessly slides into view when the mouse cursor touches the screen edge.
 - **Live Position Switching**: Switch dock placement between **Bottom**, **Top**, **Left**, and **Right** on the fly via the right-click settings menu on the apps button.
 - **Reliable App Pinning**: Fully supports standard and complex desktop IDs (including apps with reverse-DNS names like Telegram) with drag-and-drop reordering.
@@ -74,6 +77,9 @@ omarchy plugin remove myfryll.betterdock
 
 #### Основные возможности
 - **Стиль в тон системы**: Полупрозрачная темная капсула с акцентным бордером, идеально гармонирующая с виджетами и темами Omarchy.
+- **Полноценное окно настроек**: Интуитивная настройка прозрачности, скругления, масштаба значков, полноразмерного и плавающего режима, выравнивания и эффектов с поддержкой двух языков (EN/RU).
+- **Умная подсказка**: При наведении на меню приложений показывается подсказка о переходе в настройки по ПКМ.
+- **Интеграция с системным поиском**: Поиск «Настройки BetterDock» в общем меню приложений (Super-поиск) или запуск через команду `omarchy-dock-settings`.
 - **Умный авто-хайд**: Док полностью скрывается за пределы экрана при разворачивании окна на весь экран и плавно выезжает, когда курсор подводится к кромке монитора.
 - **Перемещение на лету**: Переключение расположения панели (**Снизу**, **Сверху**, **Слева**, **Справа**) и авто-скрытия прямо из контекстного меню по правому клику.
 - **Надежное прикрепление**: Корректная работа с закреплением любых приложений (включая Telegram).

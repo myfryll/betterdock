@@ -11,7 +11,7 @@ Item {
 
   property var dock: null
   readonly property bool isOpened: !!dock && dock.settingsOpened
-  readonly property string lang: (dock && dock.dockLanguage) ? dock.dockLanguage : "ru"
+  readonly property string lang: (dock && dock.dockLanguage) ? dock.dockLanguage : "en"
   readonly property bool isRu: lang === "ru"
 
   property string currentTab: "appearance"
