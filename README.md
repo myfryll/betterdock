@@ -43,16 +43,45 @@ omarchy restart shell
 
 ## Configuration & Usage
 
-- **Open App Search**: Left-click the 9-dots button on the dock.
-- **Dock Settings**: Right-click the 9-dots button to open the settings popup:
-  - Change position: **Top**, **Bottom**, **Left**, **Right**
-  - Toggle **Auto-hide**
-- **Pin / Unpin Apps**: Right-click any app icon in the dock or within the App Grid and select **Keep in Dock** / **Remove from Dock**.
-- **CLI Management**:
-  ```bash
-  omarchy dock position [bottom|top|left|right]
-  omarchy dock autohide [on|off|toggle]
-  ```
+### Opening Settings
+You can open the graphical settings window in any of three ways:
+1. **Right-Click the 9-dots button** on the dock and click **Settings**.
+2. **System Search**: Press `Super` (or click the top bar) and type `BetterDock Settings`.
+3. **Terminal / CLI**: Run `omarchy-dock-settings`.
+
+### Customization Options
+- **Appearance Tab**:
+  - **Background Opacity**: Adjust transparency from 10% to 100% (Solid) with live preview on the dock.
+  - **Corner Radius**: Choose from Sharp (0px), Subtle (6px), Default (12px), or Round (24px).
+  - **Theme Harmony**: Real-time integration with active Omarchy color themes.
+- **Layout & Style Tab**:
+  - **Dock Size**: Adjust icon scale from compact (28px) to expansive (48px).
+  - **Full-Width Bar**: Toggle between a floating capsule and a display-spanning bottom bar.
+  - **Floating Island**: Keep rounded capsule aesthetics even in expanded mode.
+  - **Icon Alignment**: Align pinned and running items to the **Center** or to the **Left**.
+- **Behavior & FX Tab**:
+  - **Hover Animation**: Smooth zoom magnification effect when hovering over dock icons.
+  - **Zoom Scale**: Adjust magnification strength from Subtle (1.10x) to Dramatic (1.35x).
+  - **Auto-Hide on Maximized**: Automatically hide dock when an application is maximized.
+  - **Bilingual UI**: Toggle between **English** and **Russian** instantly with the `[ RU | EN ]` switch.
+
+### Quick Context Menu
+- Right-click the 9-dots button for quick controls:
+  - **Position**: Place dock at **Bottom**, **Top**, **Left**, or **Right**.
+  - **Auto-Hide**: Toggle edge-triggered hiding on or off.
+  - **Settings**: Open the comprehensive settings dialog.
+
+### App Management & Pinning
+- **Open App Search**: Left-click the 9-dots button.
+- **Pin / Unpin Apps**: Right-click any app icon in the dock or inside the App Grid and select **Keep in Dock** / **Remove from Dock**.
+- **Reorder**: Drag and drop icons along the dock to reorder them.
+
+### CLI Management
+```bash
+omarchy-dock-settings               # Open graphical settings window
+omarchy dock position [bottom|top|left|right]  # Set dock position
+omarchy dock autohide [on|off|toggle]          # Toggle auto-hide
+```
 
 ---
 
@@ -73,24 +102,89 @@ omarchy plugin remove myfryll.betterdock
 
 **BetterDock** — улучшенная панель приложений для плавающих воркспейсов [Omarchy](https://omarchy.org).
 
-В отличие от стандартного полностью прозрачного дока, BetterDock добавляет аккуратную полупрозрачную подложку в тон системной темы Omarchy с акцентной обводкой и мягкой тенью.
+В отличие от стандартного полностью прозрачного дока, BetterDock добавляет аккуратную полупрозрачную подложку в тон системной темы Omarchy с акцентной обводкой, мягкой тенью и широкими возможностями кастомизации.
 
-#### Основные возможности
+---
+
+### Основные возможности
+
 - **Стиль в тон системы**: Полупрозрачная темная капсула с акцентным бордером, идеально гармонирующая с виджетами и темами Omarchy.
-- **Полноценное окно настроек**: Интуитивная настройка прозрачности, скругления, масштаба значков, полноразмерного и плавающего режима, выравнивания и эффектов с поддержкой двух языков (EN/RU).
-- **Умная подсказка**: При наведении на меню приложений показывается подсказка о переходе в настройки по ПКМ.
-- **Интеграция с системным поиском**: Поиск «Настройки BetterDock» в общем меню приложений (Super-поиск) или запуск через команду `omarchy-dock-settings`.
-- **Умный авто-хайд**: Док полностью скрывается за пределы экрана при разворачивании окна на весь экран и плавно выезжает, когда курсор подводится к кромке монитора.
+- **Полноценное окно настроек**: Графический интерфейс для настройки прозрачности, скругления, масштаба значков, полноразмерного и плавающего режима, выравнивания и эффектов с поддержкой двух языков (EN/RU).
+- **Умная подсказка при наведении**: При наведении курсора на кнопку меню приложений (9 точек) показывается аккуратная подсказка о переходе в настройки по правому клику.
+- **Интеграция с системным поиском**: Мгновенный запуск настроек через Super-поиск Omarchy (`BetterDock Settings`) или через команду `omarchy-dock-settings`.
+- **Умный авто-хайд**: Док полностью скрывается за пределы экрана при разворачивании окна на весь экран и плавно выезжает при подведении курсора к краю монитора.
 - **Перемещение на лету**: Переключение расположения панели (**Снизу**, **Сверху**, **Слева**, **Справа**) и авто-скрытия прямо из контекстного меню по правому клику.
-- **Надежное прикрепление**: Корректная работа с закреплением любых приложений (включая Telegram).
-- **Встроенное меню приложений**: Полноэкранный поиск и запуск программ по кнопке с 9 точками.
+- **Надежное прикрепление**: Корректная работа с закреплением любых приложений (включая Telegram и программы со сложными Desktop ID) и сортировка перетаскиванием (drag-and-drop).
+- **Встроенное меню приложений**: Полноэкранный поиск и запуск программ по клику на кнопку с 9 точками.
+- **Легковесность и автономность**: Написан на чистом Qt Quick и Quickshell без фоновых циклов опроса, экономя ресурс аккумулятора и процессора.
 
-#### Установка
+---
+
+### Установка
+
+Установка одной командой через терминал Omarchy CLI:
+
 ```bash
 omarchy plugin add https://github.com/myfryll/betterdock.git --enable
 ```
 
-#### Удаление
+Если ранее использовался стандартный док, отключите его во избежание наложений:
+
+```bash
+omarchy plugin disable omarchy.dock
+omarchy restart shell
+```
+
+---
+
+### Настройка и использование
+
+#### Как открыть настройки
+Открыть графическое окно настроек можно любым из трех удобных способов:
+1. **Правый клик по кнопке с 9 точками** на доке -> пункт **Settings / Настройки**.
+2. **Системный поиск**: Нажмите клавишу `Super` (или кликните по верхней панели) и начните вводить `BetterDock Settings`.
+3. **Командная строка**: Выполните `omarchy-dock-settings` в терминале.
+
+#### Доступные параметры кастомизации
+- **Вкладка «Внешний вид» (Appearance)**:
+  - **Прозрачность фона**: Плавная регулировка от 10% до 100% (Solid) с отображением изменений на живом доке в реальном времени.
+  - **Радиус скругления**: Выбор готовых пресетов: Острый (0px), Легкий (6px), Стандартный (12px), Круглый (24px).
+  - **Гармония с системой**: Автоматическое считывание цветовой палитры активной темы Omarchy.
+- **Вкладка «Расположение и стиль» (Layout & Style)**:
+  - **Размер дока**: Настройка масштаба значков от компактного (28px) до крупного (48px).
+  - **Во всю ширину**: Переключение между компактной парящей капсулой и широкой панелью во всю ширину экрана.
+  - **Парящий остров**: Сохранение скругленных краев капсулы даже в расширенном режиме.
+  - **Выравнивание значков**: Размещение приложений по **Центру** или по **Левому краю**.
+- **Вкладка «Поведение и эффекты» (Behavior & FX)**:
+  - **Анимация при наведении**: Плавное увеличение значка под курсором мыши (zoom effect).
+  - **Масштаб зума**: Настройка интенсивности увеличения от Subtle (1.10x) до Dramatic (1.35x).
+  - **Скрывать при максимизации**: Автоматическое скрытие дока под развернутыми на весь экран окнами.
+  - **Язык интерфейса**: Мгновенное переключение между **Русским** и **Английским** языком кнопкой `[ RU | EN ]` в шапке окна.
+
+#### Быстрое контекстное меню
+- При клике правой кнопкой мыши по значку 9 точек доступно меню:
+  - **Position**: Перемещение панели (**Bottom**, **Top**, **Left**, **Right**).
+  - **Auto-Hide**: Быстрое включение/выключение авто-скрытия.
+  - **Settings**: Открытие полного окна настроек.
+
+#### Управление значками и закрепление
+- **Меню приложений**: Обычный клик левой кнопкой мыши по значку с 9 точками.
+- **Закрепление и открепление**: Кликните правой кнопкой мыши по любой иконке в доке или в меню всех приложений и выберите **Keep in Dock** (Закрепить) / **Remove from Dock** (Убрать).
+- **Сортировка**: Просто перетаскивайте значки мышью для изменения порядка.
+
+#### Управление через консоль (CLI)
+```bash
+omarchy-dock-settings               # Открыть графическое окно настроек
+omarchy dock position [bottom|top|left|right]  # Задать расположение панели
+omarchy dock autohide [on|off|toggle]          # Включить/выключить авто-скрытие
+```
+
+---
+
+### Удаление
+
+Чтобы полностью удалить плагин BetterDock:
+
 ```bash
 omarchy plugin remove myfryll.betterdock
 ```
