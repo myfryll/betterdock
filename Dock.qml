@@ -555,9 +555,14 @@ Item {
     for (var j = 0; j < workspaces.length; j++) root.readMode(workspaces[j].id)
   }
 
+  function ensureDockBlur() {
+    Quickshell.execDetached(["hyprctl", "eval", "hl.layer_rule({ match = { namespace = \"^omarchy-dock$\" }, blur = true, ignore_alpha = 0.05 })"])
+  }
+
   Component.onCompleted: {
     refresh()
     syncItemModel()
+    ensureDockBlur()
   }
 
   Process {
